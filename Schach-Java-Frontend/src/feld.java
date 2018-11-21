@@ -1,6 +1,3 @@
-import schach.backend.BackendSpielAdminStub;
-import schach.backend.BackendSpielStub;
-import schach.daten.Xml;
 
 public class feld {
 	public String[][] schachmatrix; // auf der schachmatrix wird alles dargestellt
@@ -31,7 +28,7 @@ public class feld {
 
 	}
 
-	public void print(feld schachbrett, BackendSpielStub spiel, int id) { // diese print()methode beachtet die aktuelle
+	public void print(feld schachbrett,  int id) { // diese print()methode beachtet die aktuelle
 																			// belegung
 
 		String[][] neueMatrix = new String[8][8]; // hier wird eine neue MAtrix erstellt, die dann
@@ -61,11 +58,18 @@ public class feld {
 				int y = i;
 				String pos = "" + x + "" + y;
 				System.setOut(spielfeld.dummyStream);
-				spielfeld.getFigurDatenUndSetze(pos, schachbrett, spiel, id);
+				spielfeld.getFigurDatenUndSetze(pos, schachbrett,  id);
+				//spielfeld.getFigurDatenUndSetze(pos, schachbrett, spiel, id);
 				System.setOut(spielfeld.originalStream);
+				System.out.print(".");
 			}
 		}
-
+		System.out.println();
+		if(!spielfeld.schwarzAmZug())
+			System.out.println("Schwarz ist am Zug.");
+		if(spielfeld.schwarzAmZug())
+			System.out.println("Weiﬂ ist am Zug.");
+		
 		for (int i = 0; i < width; i++) { // Das eigentliche printen
 			for (int j = 0; j < height; j++) {
 				System.out.print(this.schachmatrix[i][j]);
@@ -79,13 +83,13 @@ public class feld {
 				System.out.println("|" + row + "   1. save");
 				break;
 			case 6:
-				System.out.println("|" + row + "   2. Zughistorie");
+				System.out.println("|" + row + "   2. historie");
 				break;
 			case 5:
-				System.out.println("|" + row + "   3. Zugeingabe");
+				System.out.println("|" + row + "   3. Mit Figur ziehen");
 				break;
 			case 4:
-				System.out.println("|" + row);
+				System.out.println("|" + row +"    4. update(bei 2 Sp auf 2 Ger‰ten");
 				break;
 			case 3:
 				System.out.println("|" + row);
@@ -102,6 +106,11 @@ public class feld {
 		System.out.println("-------------------------");
 		System.out.println("|A||B||C||D||E||F||G||H|");
 
+	}
+	
+	
+	public feld getSchachbrett () {
+		return this;
 	}
 
 }

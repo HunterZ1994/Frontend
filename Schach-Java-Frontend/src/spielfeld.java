@@ -6,40 +6,43 @@ import schach.backend.BackendSpielStub;
 import schach.daten.Xml;
 
 /*To-do-Liste
- 
+ 1. laufendem Spiel beitreten!!
  * 1. spiel immer aktuell halten(if server schickt was?)
+ * 	--> manuell updaten
 1.( spiel speichern )
 2. spiel laden
 3.Zug historie anzeigen
 4. Gehe zu Zug nr.xx
 5. farbzüge überprüfen!!!!!
-b7
+
 
 5. 1
 
 */
 public class spielfeld {
+	static BackendSpielAdminStub admin;
+	static BackendSpielStub spiel;
 	static int id;
-	
+	static String aktDaten;
 	static PrintStream originalStream = System.out;		//ausgabe auf der konsole
-
+	static feld schachbrett = new feld();
+	static String ogDaten;
+	
 	static PrintStream dummyStream = new PrintStream(new OutputStream(){	//ausgabe in einem stream, der nirgendwo ausegegeben wird xD
 	    public void write(int b) {	//muss man haben
-	        // NO-OP
+	        // NO-OP1
+	    	
 	    }
 	});
 
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
+		
 		System.setOut(originalStream);
-		
-		
-		
-		
 		deco();
 		System.out.println("Was möchten sie tun?");
 		System.out.println("1 Neues Spiel");
 		System.out.println("2 Laden");
+		System.out.println("3 Laufendem Spiel beitreten");
 		Scanner eingabe = new Scanner(System.in);
 		int wahl = eingabe.nextInt();
 
@@ -49,18 +52,17 @@ public class spielfeld {
 		
 		System.setOut(dummyStream);
 		
-		String url = "http://www.game-engineering.de:8080/rest/";
-		boolean logging = true;
-		BackendSpielAdminStub admin = new BackendSpielAdminStub(url, logging);
-		BackendSpielStub spiel = new BackendSpielStub(url, logging);
-		Xml.toD(admin.neuesSpiel(id));
-		feld schachbrett = new feld();
 		
-		 
 		
-
+		
 		switch (wahl) {
 		case 1:
+			System.out.println("Erstelle neues Spiel...");
+			String url = "http://www.game-engineering.de:8080/rest/";
+			boolean logging = true;
+			admin = new BackendSpielAdminStub(url, logging);
+			spiel = new BackendSpielStub(url, logging);
+			Xml.toD(admin.neuesSpiel(id));
 			spielen(id, spiel, schachbrett, admin);
 			eingabe.close();
 			break;
@@ -69,6 +71,10 @@ public class spielfeld {
 			System.out.println("Lade Spieldaten...");
 			load(admin, id);
 			break;
+			
+		case 3:
+			System.out.println("Trete Spiel bei...");
+			beitreten(id);
 		default:
 			System.out.println("Ungültige Eingabe.");
 			String[] t = new String[1];
@@ -77,7 +83,62 @@ public class spielfeld {
 		}
 
 	}
-
+	
+	
+	
+	
+	
+	public static boolean schwarzAmZug() {
+		System.setOut(dummyStream);
+		String s= spiel.getSpielDaten(id);
+		System.setOut(originalStream);
+		int pos=s.indexOf("anzahlZuege\">");	//ermittelt dynamisch wo anzahlZuege anfängt
+		char[]array =s.toCharArray();
+		
+		if(array[pos+14]=='0'|array[pos+14]=='1'|array[pos+14]=='2'|array[pos+14]=='3'|array[pos+14]=='4'|array[pos+14]=='5'|array[pos+14]=='6'|array[pos+14]=='7'|array[pos+14]=='8'|array[pos+14]=='9') {
+			int zugZehner =array[pos+13]-48;
+			int zugEinser = array[pos+14]-48;
+			int gesamt=zugZehner*10 + zugEinser;
+			System.out.println("Aktuellerzug: "+gesamt);
+			if(gesamt%2==0)
+				return true;
+			return false;
+		}
+		
+		
+		else  {
+			int zug =array[pos+13]-48;	//13 pos weiter ist die Zuganzahl, mann muss dann noch von ascii wert zu zahl 
+			System.out.println("Aktuellerzug: "+zug);
+			System.out.println(array[pos+14]);
+			
+			if(zug % 2==0)
+				return true;
+			return false;
+		}
+		
+			
+		
+		
+	}
+	
+	
+	
+	
+	
+	
+	public static void beitreten(int id) {
+		System.out.println("Trete Spiel bei...");
+		System.setOut(dummyStream);
+		String url = "http://www.game-engineering.de:8080/rest/";
+		boolean logging = true;
+		admin = new BackendSpielAdminStub(url, logging);
+		spiel = new BackendSpielStub(url, logging);
+		System.setOut(originalStream);
+		
+		System.out.println("Sie sind beigetreten...");
+		spielen(id,spiel, schachbrett,admin);
+	}
+	
 	public static void save(BackendSpielAdminStub spiel, int id) {
 		System.out.println("Daten werden gespeichert. Bitte schalten sie die Konsole nicht aus...");
 		spiel.speichernSpiel(id, "spiel");
@@ -91,6 +152,7 @@ public class spielfeld {
 	public static void load(BackendSpielAdminStub spiel, int id) {
 		System.setOut(originalStream);
 		spiel.ladenSpiel(id, "spiel");
+		System.setOut(dummyStream);
 	}
 
 	public static boolean fertig(String meldung) {
@@ -120,14 +182,20 @@ public class spielfeld {
 	public static void spielen(int id, BackendSpielStub spiel, feld schachbrett, BackendSpielAdminStub admin) {
 		
 		
-		String alteDaten=spiel.getSpielDaten(id);
+		//String alteDaten=spiel.getSpielDaten(id);
 		Scanner eingabe = new Scanner(System.in);
 		
+		
+		
+		
+		//Aktuell aktuell = new Aktuell();
+		//aktuell.run();
+		schwarzAmZug();
 		while (true) {
-			if(!alteDaten.equals(spiel.getSpielDaten(id))) {
-				schachbrett.print(schachbrett, spiel, id);
+			/*if(!alteDaten.equals(spiel.getSpielDaten(id))) {
+				schachbrett.print(schachbrett,  id);
 				alteDaten=spiel.getSpielDaten(id);
-			}
+			}*/
 			
 			System.setOut(dummyStream);
 			String daten = spiel.getSpielDaten(id);
@@ -137,39 +205,15 @@ public class spielfeld {
 				break;
 			}
 			
-			schachbrett.print(schachbrett, spiel, id);
 			
-			System.out.println("Weiß am Zug.");
+			schachbrett.print(schachbrett,  id);
+			
+			
 
-			String zug = ziehen(eingabe, spiel, admin, id);
-			System.out.println(spiel.getSpielDaten(id));
-
-			System.setOut(dummyStream);
-			daten = spiel.getSpielDaten(id);
-			System.setOut(originalStream);
-			matt(daten);
-			if (fertig(daten)) {
-				break;
-			}
-
-			while (zug.contains("D_Fehler")) {
-				System.out.println("Ungültiger Zug, Weiß bitte nochmal ziehen.");
-				zug = ziehen(eingabe, spiel, admin, id);
-			}
-
-			System.setOut(dummyStream);
-			daten = spiel.getSpielDaten(id);
-			System.setOut(originalStream);
-			matt(daten);
-			if (fertig(daten)) {
-				break;
-			}
-
-			schachbrett.print(schachbrett, spiel, id);
-			//spiel.getSpielDaten(id);
-			System.out.println("Schwarz am Zug.");
-			zug = ziehen(eingabe, spiel, admin, id);
-			System.out.println(spiel.getSpielDaten(id));
+			String zug = ziehen(eingabe, spiel, admin, id,schachbrett);
+			
+			
+			schwarzAmZug();
 			
 			System.setOut(dummyStream);
 			daten = spiel.getSpielDaten(id);
@@ -180,13 +224,44 @@ public class spielfeld {
 			}
 
 			while (zug.contains("D_Fehler")) {
-				System.out.println("Ungültiger Zug, Schwarz bitte nochmal ziehen.");
-				zug = ziehen(eingabe, spiel, admin, id);
+				
+					System.out.println("Ungültiger Zug, bitte nochmal ziehen.");
+				
+					
+				zug = ziehen(eingabe, spiel, admin, id, schachbrett);
 			}
+
+			System.setOut(dummyStream);
+			daten = spiel.getSpielDaten(id);
+			System.setOut(originalStream);
+			matt(daten);
+			if (fertig(daten)) {
+				break;
+			}
+			
+			schachbrett.print(schachbrett,  id);
+			
+			
+			zug = ziehen(eingabe, spiel, admin, id, schachbrett);
+		
+			
+			System.setOut(dummyStream);
+			daten = spiel.getSpielDaten(id);
+			System.setOut(originalStream);
+			matt(daten);
+			if (fertig(daten)) {
+				break;
+			}
+
+			while (zug.contains("D_Fehler")) {
+				
+					System.out.println("Ungültiger Zug, bitte nochmal ziehen.");
+				zug = ziehen(eingabe, spiel, admin, id, schachbrett);
 			}
 		}
+		}
 	
-
+	
 	public static void matt(String getDaten) {
 		if (weissMatt(getDaten)) {
 			System.out.println("!!!!!!!!!!!!!!!!!!!!!!");
@@ -215,18 +290,28 @@ public class spielfeld {
 		return false;
 	}
 
-	public static String ziehen(Scanner eingabe, BackendSpielStub spiel, BackendSpielAdminStub admin, int id) {
-
+	public static String ziehen(Scanner eingabe, BackendSpielStub spiel, BackendSpielAdminStub admin, int id, feld schachbrett) {
+		
+		
 		System.out.println("Welche Figur soll ziehen?");
 		String von = eingabe.nextLine();
-		if (von.contains("save")) {
-			save(admin, id);
-			System.out.println("Welche Figur soll ziehen?");
-			von = eingabe.nextLine();
-		} else if (von.contains("Zughistorie")) {
-			System.out.println(zugHistorie(spiel, id));
-			System.out.println("Welche Figur soll ziehen?");
-			von = eingabe.nextLine();
+		while (von.contains("save") | von.contains("update") | von.contains("historie")) {
+			while (von.contains("save")) {
+				save(admin, id);
+				System.out.println("Welche Figur soll ziehen?");
+				von = eingabe.nextLine();
+			}
+			while (von.contains("historie")) {
+				System.out.println(zugHistorie(spiel, id));
+				System.out.println("Welche Figur soll ziehen?");
+				von = eingabe.nextLine();
+			}
+			while (von.contains("up")) {
+				System.out.println("Das Schachbrett wird geupdatet...");
+				schachbrett.print(schachbrett,  id);
+				System.out.println("Welche Figur soll ziehen?");
+				von = eingabe.nextLine();
+			}
 		}
 		System.out.println("Wohin soll sie ziehen?");
 		String nach = eingabe.nextLine();
@@ -234,7 +319,7 @@ public class spielfeld {
 		
 		String zug=spiel.ziehe(id, von, nach);
 		System.setOut(originalStream);
-		
+		schwarzAmZug();
 	
 		return zug;// XMLtoD?!?!
 
@@ -245,7 +330,7 @@ public class spielfeld {
 
 	}
 
-	public static void getFigurDatenUndSetze(String posAufSchachMatrix, feld schachbrett, BackendSpielStub spiel,
+	public static void getFigurDatenUndSetze(String posAufSchachMatrix, feld schachbrett,
 			int id) {
 
 		// extrahiert zuerst aus dem String der bei getFigur geliefert wird die
@@ -299,14 +384,14 @@ public class spielfeld {
 
 //diese Methode wandeln den string zB b2 in eine array position um, überprüfen die farbe und
 //schreiben das array dann dementsprechend um
-	public static void setzeBauer(feld schachbrett, String pos, boolean schwarz) { // zerstückelt übergebenen string in
+	public static void setzeBauer(feld schachbrett, String pos, boolean weiss) { // zerstückelt übergebenen string in
 																					// array position
 		int x, y;
 		x = 7 - (pos.charAt(1) - 49);
 		y = pos.charAt(0) - 97;
-		if (schwarz)
+		if (weiss)
 			schachbrett.schachmatrix[x][y] = "|BW";
-		if (!schwarz) {
+		if (!weiss) {
 			schachbrett.schachmatrix[x][y] = "|BS";
 		}
 	}
@@ -327,60 +412,60 @@ public class spielfeld {
 
 	}
 
-	public static void setzeSpringer(feld schachbrett, String pos, boolean schwarz) {
+	public static void setzeSpringer(feld schachbrett, String pos, boolean weiss) {
 
 		int x, y;
 		x = 7 - (pos.charAt(1) - 49);
 		y = pos.charAt(0) - 97;
 
-		if (schwarz) {
+		if (weiss) {
 			schachbrett.schachmatrix[x][y] = "|SW";
-		} else if (!schwarz) {
+		} else if (!weiss) {
 
 			schachbrett.schachmatrix[x][y] = "|SS";
 		}
 
 	}
 
-	public static void setzeLäufer(feld schachbrett, String pos, boolean schwarz) {
+	public static void setzeLäufer(feld schachbrett, String pos, boolean weiss) {
 
 		int x, y;
 		x = 7 - (pos.charAt(1) - 49);
 		y = pos.charAt(0) - 97;
 
-		if (schwarz) {
+		if (weiss) {
 			schachbrett.schachmatrix[x][y] = "|LW";
-		} else if (!schwarz) {
+		} else if (!weiss) {
 
 			schachbrett.schachmatrix[x][y] = "|LS";
 		}
 
 	}
 
-	public static void setzeDame(feld schachbrett, String pos, boolean schwarz) {
+	public static void setzeDame(feld schachbrett, String pos, boolean weiss) {
 
 		int x, y;
 		x = 7 - (pos.charAt(1) - 49);
 		y = pos.charAt(0) - 97;
 
-		if (schwarz) {
+		if (weiss) {
 			schachbrett.schachmatrix[x][y] = "|DW";
-		} else if (!schwarz) {
+		} else if (!weiss) {
 
 			schachbrett.schachmatrix[x][y] = "|DS";
 		}
 
 	}
 
-	public static void setzeKönig(feld schachbrett, String pos, boolean schwarz) {
+	public static void setzeKönig(feld schachbrett, String pos, boolean weiss) {
 
 		int x, y;
 		x = 7 - (pos.charAt(1) - 49);
 		y = pos.charAt(0) - 97;
 
-		if (schwarz) {
+		if (weiss) {
 			schachbrett.schachmatrix[x][y] = "|KW";
-		} else if (!schwarz) {
+		} else if (!weiss) {
 
 			schachbrett.schachmatrix[x][y] = "|KS";
 		}
@@ -443,13 +528,26 @@ public class spielfeld {
 		} else if (typ == 'D') {
 			char farbe = figurDatenArray[225];
 			if (farbe == 't')
-				return true;
+				return true; 
+			return false;
+		}else if(typ=='L') {
+			char farbe=figurDatenArray[228];
+			if (farbe == 't')
+				return true; 
 			return false;
 		}
 
 		return true;// nur weil sonst error
 	}
 
+	
+	public static feld getFeld(feld schachbrett) {
+		return schachbrett;
+	}
+	
+	public static feld bring() {
+		return getFeld(schachbrett);
+	}
 	public static void deco() {
 		System.out.println("                                                  _:_ ");
 		System.out.println("                                                 '-.-' ");
